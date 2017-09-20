@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strconv"
 
 	_ "github.com/lib/pq"
 
@@ -22,6 +23,10 @@ const (
 // https://www.calhoun.io/using-postgresql-with-golang/
 func main() {
 	password := os.Getenv("HARVESTER_DB_PASSWORD")
+	user := os.Getenv("HARVESTER_DB_USER")
+	host := os.Getenv("HARVESTER_DB_HOST")
+	port, err := strconv.Atoi(os.Getenv("HARVESTER_DB_PORT"))
+	dbname := os.Getenv("HARVESTER_DB_NAME")
 	fmt.Println("hello world")
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
 		"password=%s dbname=%s",
