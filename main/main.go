@@ -21,8 +21,6 @@ const (
 	dbname = "tracker"
 )
 
-var db *sql.DB
-
 // https://www.calhoun.io/using-postgresql-with-golang/
 func main() {
 	password := os.Getenv("HARVESTER_DB_PASSWORD")
@@ -30,20 +28,19 @@ func main() {
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
 		"password=%s dbname=%s",
 		host, port, user, password, dbname)
-	tempdb, err := sql.Open("postgres", psqlInfo)
+	db, err := sql.Open("postgres", psqlInfo)
 	if err != nil {
 		panic(err)
 	}
-	db = tempdb
 	defer db.Close()
 	err = db.Ping()
 	if err != nil {
 		panic(err)
 	}
 	fmt.Println("Successfully connected!")
-
+	endpoints := &Endpoints{db: db}
 	router := mux.NewRouter()
-	router.HandleFunc("/feeds", handleFeeds).Methods("GET")
+	router.HandleFunc("/feeds", endpoints.GetFeeds).Methods("GET")
 	http.ListenAndServe(":8080", router)
 }
 
