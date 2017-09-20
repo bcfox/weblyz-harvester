@@ -2,10 +2,16 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
+	"log"
+	"net/http"
 	"os"
 
 	_ "github.com/lib/pq"
+
+	"github.com/gorilla/mux"
+	"github.com/weblyz-harvester/dao"
 )
 
 const (
@@ -15,6 +21,8 @@ const (
 	dbname = "tracker"
 )
 
+var db *sql.DB
+
 // https://www.calhoun.io/using-postgresql-with-golang/
 func main() {
 	password := os.Getenv("HARVESTER_DB_PASSWORD")
@@ -22,10 +30,11 @@ func main() {
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
 		"password=%s dbname=%s",
 		host, port, user, password, dbname)
-	db, err := sql.Open("postgres", psqlInfo)
+	tempdb, err := sql.Open("postgres", psqlInfo)
 	if err != nil {
 		panic(err)
 	}
+	db = tempdb
 	defer db.Close()
 	err = db.Ping()
 	if err != nil {
@@ -33,31 +42,26 @@ func main() {
 	}
 	fmt.Println("Successfully connected!")
 
-	getFeeds(db)
+	router := mux.NewRouter()
+	router.HandleFunc("/feeds", handleFeeds).Methods("GET")
+	http.ListenAndServe(":8080", router)
 }
 
-func getFeeds(db *sql.DB) {
-	rows, err := db.Query("SELECT fd_uuid, fd_url, fd_name, fd_group FROM feeds")
-	if err != nil {
-		// handle this error better than this
-		panic(err)
+func handleFeeds(res http.ResponseWriter, req *http.Request) {
+	res.Header().Set("Content-Type", "application/json")
+
+	feeds := dao.GetAllFeeds(db)
+	for _, feed := range feeds {
+		fmt.Println(feed)
 	}
-	defer rows.Close()
-	for rows.Next() {
-		var id string
-		var url string
-		var name string
-		var group string
-		err = rows.Scan(&id, &url, &name, &group)
-		if err != nil {
-			// handle this error
-			panic(err)
-		}
-		fmt.Println(id, url, name, group)
+
+	outgoingJSON, error := json.Marshal(feeds)
+
+	if error != nil {
+		log.Println(error.Error())
+		http.Error(res, error.Error(), http.StatusInternalServerError)
+		return
 	}
-	// get any error encountered during iteration
-	err = rows.Err()
-	if err != nil {
-		panic(err)
-	}
+
+	fmt.Fprint(res, string(outgoingJSON))
 }
