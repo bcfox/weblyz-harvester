@@ -2,16 +2,14 @@ package main
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 
 	_ "github.com/lib/pq"
 
 	"github.com/gorilla/mux"
-	"github.com/weblyz-harvester/dao"
+	"github.com/weblyz-harvester/api"
 )
 
 const (
@@ -38,27 +36,8 @@ func main() {
 		panic(err)
 	}
 	fmt.Println("Successfully connected!")
-	endpoints := &Endpoints{db: db}
+	endpoints := &api.Endpoints{DB: db}
 	router := mux.NewRouter()
 	router.HandleFunc("/feeds", endpoints.GetFeeds).Methods("GET")
 	http.ListenAndServe(":8080", router)
-}
-
-func handleFeeds(res http.ResponseWriter, req *http.Request) {
-	res.Header().Set("Content-Type", "application/json")
-
-	feeds := dao.GetAllFeeds(db)
-	for _, feed := range feeds {
-		fmt.Println(feed)
-	}
-
-	outgoingJSON, error := json.Marshal(feeds)
-
-	if error != nil {
-		log.Println(error.Error())
-		http.Error(res, error.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	fmt.Fprint(res, string(outgoingJSON))
 }
