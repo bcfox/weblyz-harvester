@@ -13,13 +13,6 @@ import (
 	"github.com/weblyz-harvester/api"
 )
 
-const (
-	host   = "foxrds.cty3szl04mof.us-east-2.rds.amazonaws.com"
-	port   = 5432
-	user   = "bfox"
-	dbname = "tracker"
-)
-
 // https://www.calhoun.io/using-postgresql-with-golang/
 func main() {
 	password := os.Getenv("HARVESTER_DB_PASSWORD")
