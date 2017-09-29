@@ -1,23 +1,27 @@
 package api
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/weblyz-harvester/dao"
+	"github.com/weblyz-harvester/srvc"
 )
 
+// Endpoints holds model data for the the endpoints
 type Endpoints struct {
-	DB *sql.DB
+	Dao       *dao.FeedDao
+	Harvester *srvc.Harvester
 }
 
+// GetFeeds retrieves all feeds from the database and returns them
 func (endpoints *Endpoints) GetFeeds(res http.ResponseWriter, req *http.Request) {
 	res.Header().Set("Content-Type", "application/json")
 
-	feeds := dao.GetAllFeeds(endpoints.DB)
+	feeds := endpoints.Dao.GetAllFeeds()
 	for _, feed := range feeds {
 		fmt.Println(feed)
 	}
@@ -31,4 +35,13 @@ func (endpoints *Endpoints) GetFeeds(res http.ResponseWriter, req *http.Request)
 	}
 
 	fmt.Fprint(res, string(outgoingJSON))
+}
+
+// ParseAllFeeds parse the feeds
+func (endpoints *Endpoints) ParseAllFeeds(res http.ResponseWriter, req *http.Request) {
+	feeds := endpoints.Dao.GetAllFeeds()
+
+	for _, feed := range feeds {
+		endpoints.Harvester.Harvest(&feed, uuid.New().String())
+	}
 }
