@@ -24,7 +24,7 @@ func (srvc *Harvester) HarvestAllPeriodically(secondsPerPeriod int, secondsForPe
 	srvc.runPeriodically = true
 	for srvc.runPeriodically {
 		srvc.HarvestAll(secondsForPeriod)
-		time.Sleep(time.Duration(secondsForPeriod) * time.Second)
+		time.Sleep(time.Duration(secondsPerPeriod) * time.Second)
 	}
 }
 
